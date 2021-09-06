@@ -31,11 +31,11 @@ while ((line = Console.ReadLine()) != "")
     }
     if (foo[0] == "r")
     {
-        board.RevealCell(new(int.Parse(foo[1]), int.Parse(foo[2])));
+        board.RevealTile(new(int.Parse(foo[1]), int.Parse(foo[2])));
     }
     else if (foo[0] == "m")
     {
-        board.MarkCell(new(int.Parse(foo[1]), int.Parse(foo[2])));
+        board.MarkTile(new(int.Parse(foo[1]), int.Parse(foo[2])));
     }
 }
 
@@ -57,19 +57,19 @@ static void DrawBoard(SweeperGame game)
         for (int col = 0; col < game.Grid.Columns; col++)
         {
             var oldColor = Console.ForegroundColor;
-            var cell = game.Grid[new(row, col)];
-            if (cell == null)
+            var tile = game.Grid[new(row, col)];
+            if (tile == null)
             {
                 Console.ForegroundColor = ConsoleColor.Gray;
                 Console.Write("[-]");
                 Console.ForegroundColor = oldColor;
                 continue;
             }
-            var symbol = cell.State == CellState.Hidden ? "-" : cell is TrappedCell ? "*" : ((SafeCell)cell).TrappedNeighbors.ToString();
-            if (cell.State == CellState.Hidden) Console.ForegroundColor = ConsoleColor.White;
-            if (cell.State == CellState.Revealed && cell is TrappedCell) Console.ForegroundColor = ConsoleColor.Red;
-            if (cell.State == CellState.Revealed && cell is SafeCell) Console.ForegroundColor = ConsoleColor.Green;
-            if (cell.State == CellState.Marked) Console.ForegroundColor = ConsoleColor.Yellow;
+            var symbol = tile.State == TileState.Hidden ? "-" : tile is TrappedTile ? "*" : ((SafeTile)tile).TrappedNeighbors.ToString();
+            if (tile.State == TileState.Hidden) Console.ForegroundColor = ConsoleColor.White;
+            if (tile.State == TileState.Revealed && tile is TrappedTile) Console.ForegroundColor = ConsoleColor.Red;
+            if (tile.State == TileState.Revealed && tile is SafeTile) Console.ForegroundColor = ConsoleColor.Green;
+            if (tile.State == TileState.Marked) Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"[{symbol}]");
             Console.ForegroundColor = oldColor;
         }

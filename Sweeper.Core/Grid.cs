@@ -2,25 +2,27 @@
 
 namespace Sweeper.Core;
 
-public class Grid<T> : IEnumerable<(GridPoint Point, T Item)>, IEnumerable
+public class Grid<T> : IReadOnlyCollection<(GridPoint Point, T Cell)>
 {
-    protected T[,] Items { get; }
+    protected T[,] Cells { get; }
     public int Rows { get; }
     public int Columns { get; }
-    public int TotalItems { get; }
+    public int Count { get; }
+
+    public bool IsReadOnly => true;
 
     public Grid(int rows, int columns)
     {
         Rows = rows;
         Columns = columns;
-        TotalItems = rows * columns;
-        Items = new T[rows, columns];
+        Count = rows * columns;
+        Cells = new T[rows, columns];
     }
 
     public T this[GridPoint point]
     {
-        get { return Items[point.Row, point.Column]; }
-        set { Items[point.Row, point.Column] = value; }
+        get => Cells[point.Row, point.Column];
+        set => Cells[point.Row, point.Column] = value;
     }
 
     public int PointToIndex(GridPoint point) => point.Row * Columns + point.Column;
@@ -29,7 +31,7 @@ public class Grid<T> : IEnumerable<(GridPoint Point, T Item)>, IEnumerable
 
     public bool PointIsOutOfBounds(GridPoint point) => point.Row < 0 || point.Row >= Rows || point.Column < 0 || point.Column >= Columns;
 
-    public IEnumerable<GridPoint> EnumeratePointNeighbors(GridPoint point)
+    public IEnumerable<GridPoint> EnumerateNeighbors(GridPoint point)
     {
         for (int row = -1; row <= 1; row++)
         {
@@ -44,19 +46,19 @@ public class Grid<T> : IEnumerable<(GridPoint Point, T Item)>, IEnumerable
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-
-    public IEnumerator<(GridPoint Point, T Item)> GetEnumerator()
+    public IEnumerator<(GridPoint Point, T Cell)> GetEnumerator()
     {
         for (int row = 0; row < Rows; row++)
         {
             for (int col = 0; col < Columns; col++)
             {
-                yield return (new(row, col), Items[row, col]);
+                yield return (new(row, col), Cells[row, col]);
             }
         }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }
