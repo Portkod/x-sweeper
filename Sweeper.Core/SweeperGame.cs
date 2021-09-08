@@ -21,22 +21,26 @@ public class SweeperGame
      */
     public int TotalTraps { get; }
     public int RemainingTraps { get; private set; }
-    public Grid<Tile> Grid { get; }
+    protected Grid<Tile> Grid { get; }
+    public int Rows => Grid.Rows;
+    public int Columns => Grid.Columns;
     private GameState _state = GameState.New;
     public GameState State
     {
         get => _state;
-        private set
+        protected set
         {
             if (_state != value)
             {
                 var previousState = _state;
                 _state = value;
-                GameStateUpdated?.Invoke(this, new(previousState, _state));
+                OnGameStateUpdated(new(previousState, _state));
             }
         }
     }
-    private int _revealedSafeTilesCount = 0;
+
+    protected int RevealedSafeTilesCount { get; set; }
+    protected bool AllSafeTilesRevealed => RevealedSafeTilesCount == Grid.Count - TotalTraps;
 
     public SweeperGame(int rows, int columns, int totalTraps)
     {
@@ -45,7 +49,18 @@ public class SweeperGame
         RemainingTraps = TotalTraps;
     }
 
-    private void PlaceTraps(GridPoint safePoint)
+    protected virtual void OnGameStateUpdated(GameStateUpdatedArgs e)
+    {
+        GameStateUpdated?.Invoke(this, e);
+    }
+    protected virtual void OnGridUpdated(GridUpdatedArgs e)
+    {
+        GridUpdated?.Invoke(this, e);
+    }
+
+    public Tile GetTileAt(GridPoint point) => Grid[point];
+
+    protected void PlaceTraps(GridPoint safePoint)
     {
         var remainingTrapsToPlace = TotalTraps;
         while (remainingTrapsToPlace > 0)
@@ -65,7 +80,7 @@ public class SweeperGame
         }
     }
 
-    private void RevealEntireGrid()
+    protected void RevealEntireGrid()
     {
         foreach (var item in Grid)
         {
@@ -75,12 +90,12 @@ public class SweeperGame
                 tile = CreateSafeTileAtPoint(item.Point);
             }
             tile.State = TileState.Revealed;
-            _revealedSafeTilesCount++;
+            RevealedSafeTilesCount++;
         }
-        GridUpdated?.Invoke(this, new());
+        OnGridUpdated(new());
     }
 
-    private void UpdateGameState(GameState newState)
+    protected void UpdateGameState(GameState newState)
     {
         switch (newState)
         {
@@ -100,14 +115,20 @@ public class SweeperGame
         State = newState;
     }
 
-    private Tile CreateTrappedTileAtPoint(GridPoint point, TileState state = TileState.Hidden)
+    protected virtual void InitNewGame(GridPoint startPoint)
+    {
+        PlaceTraps(startPoint);
+        UpdateGameState(GameState.InProgress);
+    }
+
+    protected Tile CreateTrappedTileAtPoint(GridPoint point, TileState state = TileState.Hidden)
     {
         var tile = new TrappedTile { State = state };
         Grid[point] = tile;
 
         return tile;
     }
-    private Tile CreateSafeTileAtPoint(GridPoint point, TileState state = TileState.Hidden)
+    protected Tile CreateSafeTileAtPoint(GridPoint point, TileState state = TileState.Hidden)
     {
         var tile = new SafeTile { State = state, TrappedNeighbors = CountAdjacentTraps(point) };
         Grid[point] = tile;
@@ -115,7 +136,7 @@ public class SweeperGame
         return tile;
     }
 
-    private void RevealNeighborsToPoint(GridPoint point)
+    protected void RevealNeighborsToPoint(GridPoint point)
     {
         foreach (var neighborPoint in Grid.EnumerateNeighbors(point))
         {
@@ -151,12 +172,12 @@ public class SweeperGame
                 tile.State = TileState.Hidden;
                 break;
         }
-        GridUpdated?.Invoke(this, new());
+        OnGridUpdated(new());
     }
 
     public void RevealTile(GridPoint point) => RevealTile(point, true);
 
-    private void RevealTile(GridPoint point, bool invokeUpdate)
+    protected void RevealTile(GridPoint point, bool invokeUpdate)
     {
         if (Grid.PointIsOutOfBounds(point))
         {
@@ -166,8 +187,7 @@ public class SweeperGame
 
         if (State == GameState.New)
         {
-            PlaceTraps(point);
-            UpdateGameState(GameState.InProgress);
+            InitNewGame(point);
         }
         else if (State != GameState.InProgress)
         {
@@ -198,38 +218,31 @@ public class SweeperGame
 
         if (invokeUpdate)
         {
-            GridUpdated?.Invoke(this, new());
+            OnGridUpdated(new());
         }
-        if (IsVictory())
+        if (AllSafeTilesRevealed)
         {
             UpdateGameState(GameState.Victory);
         }
     }
 
-    private void RevealTrappedTile(TrappedTile tile)
+    protected void RevealTrappedTile(TrappedTile tile)
     {
         tile.State = TileState.Revealed;
         UpdateGameState(GameState.Defeat);
     }
 
-    private void RevealSafeTile(SafeTile tile, GridPoint point)
+    protected void RevealSafeTile(SafeTile tile, GridPoint point)
     {
         tile.State = TileState.Revealed;
-        _revealedSafeTilesCount++;
+        RevealedSafeTilesCount++;
         if (tile.TrappedNeighbors == 0)
         {
             RevealNeighborsToPoint(point);
         }
     }
 
-    private bool IsVictory()
-    {
-        return _revealedSafeTilesCount == Grid.Count - TotalTraps;
-        //var safeTilesRevealedCount = Grid.Count(x => x.Cell != null && x.Cell is SafeTile && x.Cell.State == TileState.Revealed);
-        //return safeTilesRevealedCount == Grid.Count - TotalTraps;
-    }
-
-    private int CountAdjacentTraps(GridPoint point)
+    protected int CountAdjacentTraps(GridPoint point)
     {
         var count = 0;
 

@@ -45,19 +45,19 @@ static void DrawBoard(SweeperGame game)
     Console.Clear();
 
     Console.Write($"   ");
-    for (int col = 0; col < game.Grid.Columns; col++)
+    for (int col = 0; col < game.Columns; col++)
     {
         Console.Write($"{col} ".PadLeft(3));
     }
     Console.WriteLine();
 
-    for (int row = 0; row < game.Grid.Rows; row++)
+    for (int row = 0; row < game.Rows; row++)
     {
         Console.Write($"{row} ".PadLeft(3));
-        for (int col = 0; col < game.Grid.Columns; col++)
+        for (int col = 0; col < game.Columns; col++)
         {
             var oldColor = Console.ForegroundColor;
-            var tile = game.Grid[new(row, col)];
+            var tile = game.GetTileAt(new(row, col));
             if (tile == null)
             {
                 Console.ForegroundColor = ConsoleColor.Gray;
